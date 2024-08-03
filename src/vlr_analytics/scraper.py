@@ -1,5 +1,6 @@
 import os
-from typing import Optional, Set, Union
+import re
+from typing import Dict, List, Optional, Set, Union, Tuple
 
 import pandas as pd
 import requests
@@ -20,12 +21,28 @@ def find_all_table_tags(bs4_object: BeautifulSoup):
     return bs4_object.find_all("table")
 
 
-def get_matches_url_list() -> Set[str]:
-    """Gets a list of match urls.
+def get_completed_matches(page:int = 1) -> List[Tuple[str]]:
+    """Gets a list of match urls for a given page.
     Source example: https://www.vlr.gg/matches/results
     """
-    pass
+    
+    results_url = f"{BASE_URL}/matches/results"
+    PAGE_NUM = page
+    vlr_params = {"page": PAGE_NUM}
+    bs4_results = get_webpage_data(url=results_url, params=vlr_params)
 
+    game_links = bs4_results.find_all("a", class_="match-item")
+    pattern = r'/(\d+)/([a-z0-9-]+)'
+    matches_on_page = []
+    for game in game_links:
+        game_href = game.get("href")
+        match = re.match(pattern, game_href)
+        if match:
+            match_id = match.group(1)
+            match_name = match.group(2)
+            match_info = (match_id, match_name)
+            matches_on_page.append(match_info)
+    return matches_on_page
 
 def get_match_overview_data(
     match_id: int, match_name: str, output_dir: Optional[str] = None
@@ -99,10 +116,21 @@ def get_match_overview_data(
 ## Main
 ###################################
 ###################################
-print(
-    get_match_overview_data(
-        match_id=378662,
-        match_name="gen-g-vs-sentinels-valorant-champions-2024-opening-b",
-        output_dir="D:\\projects\\vlr-analytics\\test_data",
-    )
-)
+
+# print(
+#     get_match_overview_data(
+#         match_id=378662,
+#         match_name="gen-g-vs-sentinels-valorant-champions-2024-opening-b",
+#         output_dir="D:\\projects\\vlr-analytics\\test_data",
+#     )
+# )
+
+# print(
+#     get_completed_matches(page=1)
+# )
+# print(
+#     get_completed_matches(page=2)
+# )
+# print(
+#     get_completed_matches(page=3)
+# )
